@@ -1,0 +1,13 @@
+[build]
+  publish = "web"
+  functions = "netlify/functions"
+
+# Redirect all requests to index.html for SPA behavior
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables
+[context.production.environment]
+  NODE_VERSION = "18.16.1"

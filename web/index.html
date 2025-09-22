@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Price Monitor</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 0;
+                padding: 20px;
+            }
+
+            h1 {
+                color: #333;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>Price Monitor</h1>
+        <p>Welcome to the Price Monitor application.</p>
+
+        <div id="app">
+            <p>Loading price data...</p>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Fetch data from our Netlify function
+                fetch('/.netlify/functions/get-price-data')
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('app').innerHTML = `
+                            <p>Price Monitor application loaded successfully.</p>
+                            <p>API Status: ${data.status}</p>
+                            <p>Message: ${data.message}</p>
+                            <button id="refreshButton">Refresh Data</button>
+                        `;
+
+                        // Add event listener for refresh button
+                        document.getElementById('refreshButton').addEventListener('click', function () {
+                            fetch('/.netlify/functions/get-price-data')
+                                .then(response => response.json())
+                                .then(data => {
+                                    document.getElementById('app').innerHTML = `
+                                        <p>Price Monitor application loaded successfully.</p>
+                                        <p>API Status: ${data.status}</p>
+                                        <p>Message: ${data.message}</p>
+                                        <p>Last refreshed: ${new Date().toLocaleTimeString()}</p>
+                                        <button id="refreshButton">Refresh Data</button>
+                                    `;
+                                });
+                        });
+                    })
+                    .catch(error => {
+                        document.getElementById('app').innerHTML = `
+                            <p>Error loading price data: ${error.message}</p>
+                        `;
+                    });
+            });
+        </script>
+    </body>
+
+</html>
