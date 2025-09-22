@@ -1,31 +1,25 @@
 {
-    "name": "price-monitor",
-    "version": "1.0.0",
-    "description": "A tool for monitoring price changes on various e-commerce websites",
-    "main": "src/index.js",
-    "scripts": {
-        "start": "node src/index.js",
-        "add-product": "node src/cli/add-product.js",
-        "check-prices": "node src/cli/check-prices.js",
-        "test": "jest"
-    },
-    "keywords": [
-        "price",
-        "monitor",
-        "e-commerce",
-        "scraper",
-        "alerts"
-    ],
-    "author": "",
-    "license": "MIT",
-    "dependencies": {
-        "axios": "^0.27.2",
-        "cheerio": "^1.0.0-rc.12",
-        "dotenv": "^16.0.1",
-        "node-cron": "^3.0.0",
-        "nodemailer": "^6.7.5"
-    },
-    "devDependencies": {
-        "jest": "^28.1.0"
-    }
+  "name": "price-monitor-backend",
+  "version": "1.0.0",
+  "description": "Backend for the Price Monitor application.",
+  "main": "src/api/index.js",
+  "scripts": {
+    "start": "node src/api/index.js",
+    "test": "jest",
+    "worker": "node -e \"require('./src/jobs/priceChecker').processPriceChecks()\"",
+    "scheduler": "node -e \"require('./src/jobs/scheduler').schedulePriceChecks()\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bull": "^4.10.4",
+    "express": "^4.18.2",
+    "firebase-admin": "^11.11.1",
+    "node-cron": "^3.0.2",
+    "playwright": "^1.39.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
 }

@@ -117,21 +117,17 @@
     </div>
 
     <script>
-        // Wait for the DOM to be fully loaded
         document.addEventListener('DOMContentLoaded', function() {
-            // Get references to elements
             const priceTrendsEl = document.getElementById('priceTrends');
             const priceAlertsEl = document.getElementById('priceAlerts');
             const refreshButton = document.getElementById('refreshButton');
             const triggerCheckButton = document.getElementById('triggerCheck');
             const statusMessage = document.getElementById('statusMessage');
             
-            // Function to load price data
             function loadPriceData() {
                 statusMessage.textContent = 'Fetching price data...';
                 
-                // Use the enhanced price data endpoint
-                fetch('/.netlify/functions/enhanced-price-data')
+                fetch('/api/price-data')
                     .then(response => {
                         if (!response.ok) {
                             throw new Error('Network response was not ok');
@@ -139,51 +135,8 @@
                         return response.json();
                     })
                     .then(data => {
-                        // Update price trends
-                        if (data.data && data.data.trending) {
-                            priceTrendsEl.innerHTML = '';
-                            const trendingList = document.createElement('div');
-                            trendingList.className = 'price-list';
-                            
-                            data.data.trending.forEach(product => {
-                                const priceChange = product.change;
-                                const changeClass = priceChange < 0 ? 'price-drop' : 'price-increase';
-                                const changeSymbol = priceChange < 0 ? '▼' : '▲';
-                                
-                                const item = document.createElement('div');
-                                item.className = 'price-item';
-                                item.innerHTML = `
-                                    <h3>${product.name}</h3>
-                                    <p>Current Price: $${product.currentPrice}</p>
-                                    <p>Previous Price: $${product.previousPrice}</p>
-                                    <p class="${changeClass}">Change: ${changeSymbol} ${Math.abs(priceChange)}%</p>
-                                `;
-                                trendingList.appendChild(item);
-                            });
-                            
-                            priceTrendsEl.appendChild(trendingList);
-                        }
-                        
-                        // Update alerts
-                        if (data.data && data.data.recentAlerts) {
-                            priceAlertsEl.innerHTML = '';
-                            
-                            if (data.data.recentAlerts.length === 0) {
-                                priceAlertsEl.textContent = 'No recent alerts.';
-                            } else {
-                                data.data.recentAlerts.forEach(alert => {
-                                    const alertEl = document.createElement('div');
-                                    alertEl.className = 'alerts';
-                                    alertEl.innerHTML = `
-                                        <strong>${alert.productName}</strong> price dropped by 
-                                        <span class="price-drop">$${alert.priceDrop}</span> 
-                                        on ${new Date(alert.date).toLocaleDateString()}
-                                    `;
-                                    priceAlertsEl.appendChild(alertEl);
-                                });
-                            }
-                        }
-                        
+                        updatePriceTrends(data.trending);
+                        updateAlerts(data.recentAlerts);
                         statusMessage.textContent = `Data loaded successfully at ${new Date().toLocaleTimeString()}`;
                     })
                     .catch(error => {
@@ -193,19 +146,63 @@
                         statusMessage.textContent = `Error: ${error.message}`;
                     });
             }
+
+            function updatePriceTrends(trending) {
+                priceTrendsEl.innerHTML = '';
+                if (!trending || Object.keys(trending).length === 0) {
+                    priceTrendsEl.textContent = 'No trending data available.';
+                    return;
+                }
+
+                const trendingList = document.createElement('div');
+                trendingList.className = 'price-list';
+                
+                for(const productId in trending) {
+                    const product = trending[productId]
+                    const priceChange = product.deltaPct;
+                    const changeClass = priceChange < 0 ? 'price-drop' : 'price-increase';
+                    const changeSymbol = priceChange < 0 ? '▼' : '▲';
+                    
+                    const item = document.createElement('div');
+                    item.className = 'price-item';
+                    item.innerHTML = `
+                        <h3>${product.title || productId}</h3>
+                        <p>Samples: ${product.samples}</p>
+                        <p class="${changeClass}">Change: ${changeSymbol} ${Math.abs(priceChange)}%</p>
+                    `;
+                    trendingList.appendChild(item);
+                }
+                
+                priceTrendsEl.appendChild(trendingList);
+            }
+
+            function updateAlerts(alerts) {
+                priceAlertsEl.innerHTML = '';
+                if (!alerts || Object.keys(alerts).length === 0) {
+                    priceAlertsEl.textContent = 'No recent alerts.';
+                    return;
+                }
+                
+                for(const alertId in alerts) {
+                    const alert = alerts[alertId];
+                    const alertEl = document.createElement('div');
+                    alertEl.className = 'alerts';
+                    alertEl.innerHTML = `
+                        <strong>${alert.productId}</strong> price dropped to 
+                        <span class="price-drop">$${alert.price}</span> (target: $${alert.targetPrice})
+                        on ${new Date(alert.triggeredAt).toLocaleDateString()}
+                    `;
+                    priceAlertsEl.appendChild(alertEl);
+                }
+            }
             
-            // Function to trigger price check
             function triggerPriceCheck() {
                 statusMessage.textContent = 'Triggering price check...';
                 
-                // Call the scheduled price check endpoint with the secret key
-                // Note: In a real app, you wouldn't expose the key in frontend code
-                // This is just for demonstration purposes
-                fetch('/.netlify/functions/scheduled-price-check?key=Vwgs7k8S9ObxJ0DovmQp2jZLPiuqlN4Y')
+                fetch('/api/trigger-check', { method: 'POST' })
                     .then(response => response.json())
                     .then(data => {
                         statusMessage.textContent = `Price check completed: ${data.message}`;
-                        // Reload price data after check
                         setTimeout(loadPriceData, 1000);
                     })
                     .catch(error => {
@@ -213,11 +210,9 @@
                     });
             }
             
-            // Add event listeners
             refreshButton.addEventListener('click', loadPriceData);
             triggerCheckButton.addEventListener('click', triggerPriceCheck);
             
-            // Load initial data
             loadPriceData();
         });
     </script>
