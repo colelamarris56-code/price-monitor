@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price Monitor Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #3f51b5;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            margin: 0;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .price-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .price-item {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            transition: transform 0.3s ease;
+        }
+        .price-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .price-drop {
+            color: green;
+            font-weight: bold;
+        }
+        .price-increase {
+            color: red;
+            font-weight: bold;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+            color: #666;
+        }
+        .alerts {
+            background-color: #ffecb3;
+            border-left: 4px solid #ffc107;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #3f51b5;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #303f9f;
+        }
+        .status {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Price Monitor Dashboard</h1>
+        <p>Track price changes across your favorite products</p>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Price Trends</h2>
+            <div id="priceTrends" class="loading">Loading price data...</div>
+        </div>
+        
+        <div class="card">
+            <h2>Recent Price Alerts</h2>
+            <div id="priceAlerts" class="loading">Loading alerts...</div>
+        </div>
+        
+        <div class="card">
+            <h2>Actions</h2>
+            <button id="refreshButton">Refresh Data</button>
+            <button id="triggerCheck">Trigger Price Check</button>
+            <div class="status" id="statusMessage"></div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for the DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get references to elements
+            const priceTrendsEl = document.getElementById('priceTrends');
+            const priceAlertsEl = document.getElementById('priceAlerts');
+            const refreshButton = document.getElementById('refreshButton');
+            const triggerCheckButton = document.getElementById('triggerCheck');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            // Function to load price data
+            function loadPriceData() {
+                statusMessage.textContent = 'Fetching price data...';
+                
+                // Use the enhanced price data endpoint
+                fetch('/.netlify/functions/enhanced-price-data')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Update price trends
+                        if (data.data && data.data.trending) {
+                            priceTrendsEl.innerHTML = '';
+                            const trendingList = document.createElement('div');
+                            trendingList.className = 'price-list';
+                            
+                            data.data.trending.forEach(product => {
+                                const priceChange = product.change;
+                                const changeClass = priceChange < 0 ? 'price-drop' : 'price-increase';
+                                const changeSymbol = priceChange < 0 ? '▼' : '▲';
+                                
+                                const item = document.createElement('div');
+                                item.className = 'price-item';
+                                item.innerHTML = `
+                                    <h3>${product.name}</h3>
+                                    <p>Current Price: $${product.currentPrice}</p>
+                                    <p>Previous Price: $${product.previousPrice}</p>
+                                    <p class="${changeClass}">Change: ${changeSymbol} ${Math.abs(priceChange)}%</p>
+                                `;
+                                trendingList.appendChild(item);
+                            });
+                            
+                            priceTrendsEl.appendChild(trendingList);
+                        }
+                        
+                        // Update alerts
+                        if (data.data && data.data.recentAlerts) {
+                            priceAlertsEl.innerHTML = '';
+                            
+                            if (data.data.recentAlerts.length === 0) {
+                                priceAlertsEl.textContent = 'No recent alerts.';
+                            } else {
+                                data.data.recentAlerts.forEach(alert => {
+                                    const alertEl = document.createElement('div');
+                                    alertEl.className = 'alerts';
+                                    alertEl.innerHTML = `
+                                        <strong>${alert.productName}</strong> price dropped by 
+                                        <span class="price-drop">$${alert.priceDrop}</span> 
+                                        on ${new Date(alert.date).toLocaleDateString()}
+                                    `;
+                                    priceAlertsEl.appendChild(alertEl);
+                                });
+                            }
+                        }
+                        
+                        statusMessage.textContent = `Data loaded successfully at ${new Date().toLocaleTimeString()}`;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching price data:', error);
+                        priceTrendsEl.textContent = 'Error loading price data. Please try again later.';
+                        priceAlertsEl.textContent = 'Error loading alerts. Please try again later.';
+                        statusMessage.textContent = `Error: ${error.message}`;
+                    });
+            }
+            
+            // Function to trigger price check
+            function triggerPriceCheck() {
+                statusMessage.textContent = 'Triggering price check...';
+                
+                // Call the scheduled price check endpoint with the secret key
+                // Note: In a real app, you wouldn't expose the key in frontend code
+                // This is just for demonstration purposes
+                fetch('/.netlify/functions/scheduled-price-check?key=Vwgs7k8S9ObxJ0DovmQp2jZLPiuqlN4Y')
+                    .then(response => response.json())
+                    .then(data => {
+                        statusMessage.textContent = `Price check completed: ${data.message}`;
+                        // Reload price data after check
+                        setTimeout(loadPriceData, 1000);
+                    })
+                    .catch(error => {
+                        statusMessage.textContent = `Error triggering price check: ${error.message}`;
+                    });
+            }
+            
+            // Add event listeners
+            refreshButton.addEventListener('click', loadPriceData);
+            triggerCheckButton.addEventListener('click', triggerPriceCheck);
+            
+            // Load initial data
+            loadPriceData();
+        });
+    </script>
+</body>
+</html>
