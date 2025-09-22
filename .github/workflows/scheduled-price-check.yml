@@ -14,5 +14,8 @@ jobs:
       - name: Call Netlify Function
         run: |
           curl -X GET "https://YOUR-NETLIFY-SITE-NAME.netlify.app/.netlify/functions/scheduled-price-check?key=${{ secrets.SCHEDULER_SECRET_KEY }}"
+      - name: Log the execution
+        run: |
+          curl -X GET "https://YOUR-NETLIFY-SITE-NAME.netlify.app/.netlify/functions/log-price-check"
       - name: Log completion
         run: echo "Price check completed at $(date)"
