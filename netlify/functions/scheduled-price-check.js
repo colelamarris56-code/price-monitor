@@ -2,6 +2,12 @@
 // This function needs to be triggered by an external scheduler service
 // You can use services like cron-job.org, EasyCron, or GitHub Actions to call this endpoint on a schedule
 
+exports.handler = async function(event, context) {
+  // Validate secret key to prevent unauthorized access
+  const secretKey = process.env.SCHEDULER_SECRET_KEY || "Vwgs7k8S9ObxJ0DovmQp2jZLPiuqlN4Y";ify function for scheduled price checking
+// This function needs to be triggered by an external scheduler service
+// You can use services like cron-job.org, EasyCron, or GitHub Actions to call this endpoint on a schedule
+
 exports.handler = async function (event, context) {
     // Validate secret key to prevent unauthorized access
     const secretKey = process.env.SCHEDULER_SECRET_KEY || "your-secret-key";
