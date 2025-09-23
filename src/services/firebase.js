@@ -8,7 +8,7 @@ const serviceAccount = require("../../firebase-credentials.json");
 
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
-  databaseURL: "https://your-project-id.firebaseio.com", // Replace with your database URL
+  databaseURL: "https://galnanized-hall-472603-g2.firebaseio.com", // Replace with your database URL
 });
 
 const db = firebase.database();
