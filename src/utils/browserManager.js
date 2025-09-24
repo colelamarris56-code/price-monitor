@@ -39,4 +39,4 @@ async function closeBrowser() {
   }
 }
 
-module.exports = { getBrowser, closeBrowser };
+module.exports = { getBrowser, closeBrowser, launchBrowser };

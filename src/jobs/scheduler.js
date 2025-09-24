@@ -14,11 +14,22 @@ const { retry } = require('../utils/retry');
 async function enqueuePriceChecks() {
   logger.info('Enqueuing price checks...');
   try {
-    const products = await retry(getProducts, 3, 1000, (error) => {
+    let products = await retry(getProducts, 3, 1000, (error) => {
         logger.warn('Retrying getProducts due to error:', error.message);
     });
 
-    if (!products || products.length === 0) {
+    if (!products) {
+        products = [];
+    }
+
+    // Add a hardcoded Newegg product for demonstration
+    products.push({
+        id: 'newegg-demo-product',
+        url: 'https://www.newegg.com/p/N82E16834233545'
+    });
+
+
+    if (products.length === 0) {
         logger.info('No products to enqueue.');
         return 0;
     }

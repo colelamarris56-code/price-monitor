@@ -1,28 +1,36 @@
-require('dotenv').config();
-const { schedulePriceChecks } = require('./jobs/scheduler');
-const { processPriceChecks } = require('./jobs/priceChecker');
-const { launchBrowser, closeBrowser } = require('./utils/browserManager');
+
+// src/index.js
+
 const logger = require('./utils/logger');
+const { getProducts, updatePrice } = require('./services/firebase');
+const { launchBrowser, closeBrowser } = require('./utils/browserManager');
+const amazon = require('./adapters/amazon');
+const newegg = require('./adapters/newegg'); // Import the newegg adapter
 
 async function main() {
-    try {
-        logger.info('Starting Price Monitor application');
-        await launchBrowser();
-        processPriceChecks();
-        schedulePriceChecks();
-        logger.info(`Price monitoring jobs are scheduled and workers are running.`);
-    } catch (error) {
-        logger.error('Failed to start application:', error);
-        await closeBrowser();
-        process.exit(1);
-    }
-}
+  try {
+    logger.info('Starting Price Monitor application');
+    const browser = await launchBrowser();
+    const products = await getProducts();
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-    logger.info('Application shutting down');
+    const adapters = [amazon, newegg]; // Add the newegg adapter to the array
+
+    for (const product of products) {
+      for (const adapter of adapters) {
+        if (adapter.canHandle(product.url)) {
+          const priceData = await adapter.scrapePrice(browser, product.url);
+          await updatePrice(product.id, priceData);
+          logger.info(`Updated price for ${product.name}`, priceData);
+          break;
+        }
+      }
+    }
+
     await closeBrowser();
-    process.exit(0);
-});
+    logger.info('Price Monitor application finished');
+  } catch (error) {
+    logger.error('Failed to start application:', error);
+  }
+}
 
 main();
