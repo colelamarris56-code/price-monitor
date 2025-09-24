@@ -11,6 +11,9 @@ const app = express();
 
 app.use(express.json());
 
+// Serve static files from the 'web' directory
+app.use(express.static(path.join(__dirname, '..', '..', 'web')));
+
 // Logging middleware
 app.use((req, res, next) => {
   logger.info(`Request received: ${req.method} ${req.originalUrl}`);
@@ -39,8 +42,4 @@ app.get('/api/logs', (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => {
-  logger.info(`API server listening on port ${port}`);
-});
+module.exports = app;

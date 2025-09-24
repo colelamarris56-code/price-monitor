@@ -6,8 +6,11 @@ const firebase = require("firebase-admin");
 // Initialize Firebase Admin SDK (replace with your credentials)
 const serviceAccount = require("../../firebase-credentials.json");
 
+// Initializes the Firebase Admin SDK.
 firebase.initializeApp({
+  // Authenticates with the Firebase project using the provided service account credentials.
   credential: firebase.credential.cert(serviceAccount),
+  // Sets the URL of the Firebase Realtime Database.
   databaseURL: "https://galnanized-hall-472603-g2.firebaseio.com", // Replace with your database URL
 });
 
